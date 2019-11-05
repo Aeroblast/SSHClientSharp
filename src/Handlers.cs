@@ -23,16 +23,16 @@ namespace SSHClientSharp
             UInt32 pos = 1;
             for(uint i=0;i<16;i++)cookie[i]=data[pos+i];
             pos += 16;//cookie
-            key_algorithms = Util.ReadNameList(data, ref pos);
-            server_host_key_algorithms = Util.ReadNameList(data, ref pos);
-            encryption_algorithms_client_to_server = Util.ReadNameList(data, ref pos);
-            encryption_algorithms_server_to_client = Util.ReadNameList(data, ref pos);
-            mac_algorithms_client_to_server = Util.ReadNameList(data, ref pos);
-            mac_algorithms_server_to_client = Util.ReadNameList(data, ref pos);
-            compression_algorithms_client_to_server = Util.ReadNameList(data, ref pos);
-            compression_algorithms_server_to_client = Util.ReadNameList(data, ref pos);
-            languages_client_to_server = Util.ReadNameList(data, ref pos);
-            languages_server_to_client = Util.ReadNameList(data, ref pos);
+            key_algorithms = Util.GetNameList(data, ref pos);
+            server_host_key_algorithms = Util.GetNameList(data, ref pos);
+            encryption_algorithms_client_to_server = Util.GetNameList(data, ref pos);
+            encryption_algorithms_server_to_client = Util.GetNameList(data, ref pos);
+            mac_algorithms_client_to_server = Util.GetNameList(data, ref pos);
+            mac_algorithms_server_to_client = Util.GetNameList(data, ref pos);
+            compression_algorithms_client_to_server = Util.GetNameList(data, ref pos);
+            compression_algorithms_server_to_client = Util.GetNameList(data, ref pos);
+            languages_client_to_server = Util.GetNameList(data, ref pos);
+            languages_server_to_client = Util.GetNameList(data, ref pos);
             first_kex_packet_follows = data[pos]; pos++;
             reserve=Util.GetUInt32(data,pos);
         }

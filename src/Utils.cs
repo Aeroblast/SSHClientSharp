@@ -29,7 +29,7 @@ namespace SSHClientSharp
             
             return BitConverter.ToUInt16(t);
         }
-        public static string[] ReadNameList(byte[] src, ref UInt32 pos)
+        public static string[] GetNameList(byte[] src, ref UInt32 pos)
         {
             UInt32 length = GetUInt32(src, pos);
             pos += 4;

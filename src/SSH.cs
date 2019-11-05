@@ -25,7 +25,7 @@ namespace SSHClientSharp
             //协议版本交换
             while (true)
             {
-                string s = GetLine(255);
+                string s = ReadLine(255);
                 if (s.StartsWith("SSH-"))
                 {
                     server_id = s;
@@ -33,11 +33,11 @@ namespace SSHClientSharp
                 }
             }
 
-            SendLine(client_id);
+            WriteLine(client_id);
 
             while (true)
             {
-                byte[] p = GetPacket();
+                byte[] p = ReadPacket();
                 if (Enum.IsDefined(typeof(SSH_MSG), p[0]))
                     switch ((SSH_MSG)p[0])
                     {
@@ -53,42 +53,42 @@ namespace SSHClientSharp
 
 
         }
-        void SendLine(string s)
+        void WriteLine(string s)
         {
             byte[] b = Util.text_encoder.GetBytes(s);
             stream.Write(b, 0, b.Length);
             stream.WriteByte((byte)'\r');
             stream.WriteByte((byte)'\n');
         }
-        string GetLine(int max)
+        string ReadLine(int max)
         {
             List<byte> buf = new List<byte>();
             byte b;
             for (int i = 0; i < max; i++)
             {
-                b = GetByte();
+                b = ReadByte();
                 char c = (char)b;
                 if (c == '\r') break;
                 buf.Add(b);
             }
-            b = GetByte();
+            b = ReadByte();
             if ((char)b != '\n') throw new SSHException();
             return Util.text_encoder.GetString(buf.ToArray());
         }
-        byte[] GetPacket()
+        byte[] ReadPacket()
         {
             byte[] t = new byte[4];
-            t[3] = GetByte();
-            t[2] = GetByte();
-            t[1] = GetByte();
-            t[0] = GetByte();
+            t[3] = ReadByte();
+            t[2] = ReadByte();
+            t[1] = ReadByte();
+            t[0] = ReadByte();
             UInt32 packet_length = BitConverter.ToUInt32(t);
-            byte padding_length = GetByte();
+            byte padding_length = ReadByte();
             UInt32 i = 0;
             byte[] payload = new byte[packet_length - padding_length - 1];
             for (; i < packet_length - padding_length - 1; i++)
             {
-                payload[i] = GetByte();
+                payload[i] = ReadByte();
             }
             for (; i < packet_length; i++)
             {
@@ -96,7 +96,7 @@ namespace SSHClientSharp
             }
             return payload;
         }
-        byte GetByte()
+        byte ReadByte()
         {
             int t = stream.ReadByte();
             if (t < 0) throw new TcpEndException();
