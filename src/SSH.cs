@@ -38,11 +38,15 @@ namespace SSHClientSharp
             while (true)
             {
                 byte[] p = ReadPacket();
+                if (p == null) continue;
                 if (Enum.IsDefined(typeof(SSH_MSG), p[0]))
                     switch ((SSH_MSG)p[0])
                     {
                         case SSH_MSG.KEXINIT:
-                        KexPacket a=new KexPacket(p);
+                            KexPacket a = new KexPacket(p);
+                            KexPacket b = new KexPacket();
+                            WritePacket(b.ToBytes());
+                            //WritePacket(new byte[]{(byte)SSH_MSG.NEWKEYS});
                             break;
                     }
                 else
@@ -83,6 +87,7 @@ namespace SSHClientSharp
             t[1] = ReadByte();
             t[0] = ReadByte();
             UInt32 packet_length = BitConverter.ToUInt32(t);
+            if (packet_length == 0) return null;
             byte padding_length = ReadByte();
             UInt32 i = 0;
             byte[] payload = new byte[packet_length - padding_length - 1];
@@ -94,7 +99,23 @@ namespace SSHClientSharp
             {
 
             }
+            //to-do:mac
             return payload;
+        }
+        void WritePacket(byte[] payload)
+        {
+            UInt32 packet_length = (UInt32)payload.Length;
+            uint padding_length = 8 - ((packet_length + 5) % 8);
+            if (padding_length < 4) padding_length += 8;
+            packet_length += padding_length + 1;
+            List<byte> r = new List<byte>();
+            r.AddRange(Util.UInt32Bytes(packet_length));
+            r.Add((byte)padding_length);
+            r.AddRange(payload);
+            byte[] padding = new byte[padding_length];
+            r.AddRange(padding);
+            //to-do mac;
+            stream.Write(r.ToArray());
         }
         byte ReadByte()
         {

@@ -6,7 +6,7 @@ namespace SSHClientSharp
     {
         static void Main(string[] args)
         {
-            SSH ssh=new SSH("192.168.1.103",22);
+            SSH ssh=new SSH("127.0.0.1",22);
             ssh.Connect();
         }
     }

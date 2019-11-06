@@ -2,6 +2,7 @@ namespace SSHClientSharp
 {
     public enum SSH_MSG : byte
     {
+        //https://www.iana.org/assignments/ssh-parameters/ssh-parameters.xhtml
         DISCONNET = 1,
         IGNORE = 2,
         UNIMPLEMENTED = 3,
