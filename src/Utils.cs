@@ -74,14 +74,14 @@ namespace SSHClientSharp
         }
         public static byte[] MPInt(BigInteger n)
         {
-            byte[] a=n.ToByteArray(false,true);
-            UInt32 l= (UInt32)a.Length;
-            List<byte> r=new List<byte>();
+            byte[] a = n.ToByteArray(false, true);
+            UInt32 l = (UInt32)a.Length;
+            List<byte> r = new List<byte>();
             r.AddRange(UInt32Bytes(l));
             r.AddRange(a);
             return r.ToArray();
         }
-        static Random random=new Random();
+        static Random random = new Random();
         public static void RandomPadding(ref byte[] a)
         {
             random.NextBytes(a);
@@ -94,6 +94,22 @@ namespace SSHClientSharp
             randomizer.GetBytes(bytesArray);
             bytesArray[bytesArray.Length - 1] = (byte)(bytesArray[bytesArray.Length - 1] & 0x7F);   //  Ensure not a negative value
             return new BigInteger(bytesArray);
+        }
+        public static string GetSSHString(byte[] r,ref int pos)
+        {
+            UInt32 l = GetUInt32(r, (ulong)pos);
+            string s=text_encoder.GetString(r, pos + 4, (int)l);
+            pos+=4+(int)l;
+            return s;
+
+        }
+        public static BigInteger GetMPInt(byte[] r,ref int pos)
+        {
+            UInt32 l = GetUInt32(r, (ulong)pos);
+            byte[] s = new byte[l];
+            for (int i = 0; i < l; i++) s[i] = r[pos + 4 + i];
+            pos+=4+(int)l;
+            return new BigInteger(s, false, true);
         }
     }
 }

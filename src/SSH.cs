@@ -44,10 +44,10 @@ namespace SSHClientSharp
             {
                 byte[] p = ReadPacket();
                 if (p == null) continue;
-                
+
                 if (Enum.IsDefined(typeof(SSH_MSG), p[0]))
                 {
-                    Log.log("[Info]Get  packet:type " + p[0]+" SSH_MSG_"+((SSH_MSG)p[0]).ToString());
+                    Log.log("[Info]Get  packet:type " + p[0] + " SSH_MSG_" + ((SSH_MSG)p[0]).ToString());
                     switch ((SSH_MSG)p[0])
                     {
                         case SSH_MSG.KEXINIT:
@@ -57,7 +57,9 @@ namespace SSHClientSharp
                             //应该检查一下是否有相符的
                             KexDHInit dhi = new KexDHInit();
                             WritePacket(dhi);
-                            byte[] p2 = ReadPacket();
+                            break;
+                        case SSH_MSG.KEXDH_REPLY:
+                        KexDHReply dhr=new KexDHReply(p);
                             WritePacket(new NewKeys());
                             break;
                     }
@@ -119,7 +121,7 @@ namespace SSHClientSharp
         void WritePacket(Packet p)
         {
             byte[] payload = p.ToBytes();
-            Log.log("[Info]Send packet:type " + payload[0]+" SSH_MSG_"+((SSH_MSG)payload[0]).ToString());
+            Log.log("[Info]Send packet:type " + payload[0] + " SSH_MSG_" + ((SSH_MSG)payload[0]).ToString());
             UInt32 packet_length = (UInt32)payload.Length;
             uint padding_length = 8 - ((packet_length + 5) % 8);
             if (padding_length < 4) padding_length += 8;

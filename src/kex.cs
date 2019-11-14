@@ -31,6 +31,21 @@ namespace SSHClientSharp
             return payload.ToArray();
         }
     }
+    
+    public class KexDHReply
+    {
+        public KexDHReply(byte[] payload)
+        {
+            System.IO.File.WriteAllBytes("debug.bin",payload);
+            int pos=5;
+            string K_F=Util.GetSSHString(payload,ref pos);
+            BigInteger f=Util.GetMPInt(payload,ref pos);
+            string s=Util.GetSSHString(payload,ref pos); 
+
+        }
+
+    }
+    
     public class NewKeys : Packet
     {
         public override byte[] ToBytes()
