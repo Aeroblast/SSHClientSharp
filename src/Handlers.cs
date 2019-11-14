@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+
 namespace SSHClientSharp
 {
 
     //SSH_MSG.KEXINIT
-    public class KexPacket
+    public class KexPacket:Packet
     {
         byte[] cookie=new byte[16];
         string[] kex_algorithms;//密钥交换算法
@@ -39,7 +40,7 @@ namespace SSHClientSharp
         }
         public KexPacket()
         {
-            kex_algorithms=new string[]{"diffie-hellman-group14-sha1"};
+            kex_algorithms=new string[]{"diffie-hellman-group14-sha1"};//备选diffie-hellman-group-exchange-sha256 RFC4419
             server_host_key_algorithms=new string[]{"ssh-rsa"};
             encryption_algorithms_client_to_server=new string[]{"aes128-ctr"};//标准是cbc
             encryption_algorithms_server_to_client=new string[]{"aes128-ctr"};
@@ -52,7 +53,7 @@ namespace SSHClientSharp
             first_kex_packet_follows=0;
             reserve=0;
         }
-        public byte[] ToBytes()
+        override public byte[] ToBytes()
         {
             List<byte> r=new List<byte>();
             r.Add((byte)SSH_MSG.KEXINIT);

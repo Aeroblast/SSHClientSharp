@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Security.Cryptography;
 using System.Net.Sockets;
+using System.IO;
 namespace SSHClientSharp
 {
     class SSH
@@ -12,6 +14,8 @@ namespace SSHClientSharp
         string host;
         int port;
         string server_id = "";
+        bool isMacOn = false;
+        HMACSHA1 mac = new HMACSHA1();
         NetworkStream stream;
         public SSH(string host, int port = 22)
         {
@@ -22,6 +26,7 @@ namespace SSHClientSharp
         {
             tcp = new TcpClient(host, port);
             stream = tcp.GetStream();
+
             //协议版本交换
             while (true)
             {
@@ -39,16 +44,24 @@ namespace SSHClientSharp
             {
                 byte[] p = ReadPacket();
                 if (p == null) continue;
+                
                 if (Enum.IsDefined(typeof(SSH_MSG), p[0]))
+                {
+                    Log.log("[Info]Get  packet:type " + p[0]+" SSH_MSG_"+((SSH_MSG)p[0]).ToString());
                     switch ((SSH_MSG)p[0])
                     {
                         case SSH_MSG.KEXINIT:
                             KexPacket a = new KexPacket(p);
                             KexPacket b = new KexPacket();
-                            WritePacket(b.ToBytes());
-                            //WritePacket(new byte[]{(byte)SSH_MSG.NEWKEYS});
+                            WritePacket(b);
+                            //应该检查一下是否有相符的
+                            KexDHInit dhi = new KexDHInit();
+                            WritePacket(dhi);
+                            byte[] p2 = ReadPacket();
+                            WritePacket(new NewKeys());
                             break;
                     }
+                }
                 else
                 {
                     throw new SSHException();
@@ -95,15 +108,18 @@ namespace SSHClientSharp
             {
                 payload[i] = ReadByte();
             }
-            for (; i < packet_length; i++)
+            for (; i < packet_length - 1; i++)
             {
-
+                ReadByte();
             }
             //to-do:mac
             return payload;
         }
-        void WritePacket(byte[] payload)
+        UInt32 packet_count_sent = 0;
+        void WritePacket(Packet p)
         {
+            byte[] payload = p.ToBytes();
+            Log.log("[Info]Send packet:type " + payload[0]+" SSH_MSG_"+((SSH_MSG)payload[0]).ToString());
             UInt32 packet_length = (UInt32)payload.Length;
             uint padding_length = 8 - ((packet_length + 5) % 8);
             if (padding_length < 4) padding_length += 8;
@@ -113,21 +129,30 @@ namespace SSHClientSharp
             r.Add((byte)padding_length);
             r.AddRange(payload);
             byte[] padding = new byte[padding_length];
+            Util.RandomPadding(ref padding);
             r.AddRange(padding);
             //to-do mac;
+            if (isMacOn)
+            {
+                // mac.ComputeHash();
+            }
             stream.Write(r.ToArray());
+            packet_count_sent++;
         }
+        //FileStream fileStream=new FileStream("debug.bin",FileMode.Create);
         byte ReadByte()
         {
             int t = stream.ReadByte();
             if (t < 0) throw new TcpEndException();
+            //fileStream.WriteByte((byte)t);
+            //fileStream.Flush();
             return (byte)t;
         }
 
     }
-    abstract class PacketHandler
+    public abstract class Packet
     {
-
+        public abstract byte[] ToBytes();
     }
 
     public class SSHException : Exception
