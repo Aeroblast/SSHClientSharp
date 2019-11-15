@@ -27,7 +27,7 @@ namespace SSHClientSharp
         {
             List<byte> payload = new List<byte>();
             payload.Add((byte)SSH_MSG.KEXDH_INIT);
-            payload.AddRange(Util.MPInt(e));
+            payload.AddRange(Util.MPIntBytes(e));
             return payload.ToArray();
         }
     }
@@ -36,11 +36,15 @@ namespace SSHClientSharp
     {
         public KexDHReply(byte[] payload)
         {
-            System.IO.File.WriteAllBytes("debug.bin",payload);
-            int pos=5;
-            string K_F=Util.GetSSHString(payload,ref pos);
-            BigInteger f=Util.GetMPInt(payload,ref pos);
-            string s=Util.GetSSHString(payload,ref pos); 
+            
+            int pos=1;
+            UInt32 hostkeylength=Util.GetUInt32(payload,pos);
+            pos+=4;
+            string keytype=Util.GetSSHString(payload,ref pos);
+            BigInteger RSA_public_exponet=Util.GetMPInt(payload,ref pos);
+            BigInteger RSA_modulus=Util.GetMPInt(payload,ref pos);
+            BigInteger DH_server_f=Util.GetMPInt(payload,ref pos);
+            BigInteger H= Util.GetMPInt(payload,ref pos);
 
         }
 

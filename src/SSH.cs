@@ -59,8 +59,9 @@ namespace SSHClientSharp
                             WritePacket(dhi);
                             break;
                         case SSH_MSG.KEXDH_REPLY:
-                        KexDHReply dhr=new KexDHReply(p);
+                            KexDHReply dhr = new KexDHReply(p);
                             WritePacket(new NewKeys());
+                            WritePacket(new ServiceReqest("ssh-userauth"));
                             break;
                     }
                 }
@@ -74,10 +75,8 @@ namespace SSHClientSharp
         }
         void WriteLine(string s)
         {
-            byte[] b = Util.text_encoder.GetBytes(s);
+            byte[] b = Util.text_encoder.GetBytes(s + "\r\n");
             stream.Write(b, 0, b.Length);
-            stream.WriteByte((byte)'\r');
-            stream.WriteByte((byte)'\n');
         }
         string ReadLine(int max)
         {
@@ -136,7 +135,8 @@ namespace SSHClientSharp
             //to-do mac;
             if (isMacOn)
             {
-                // mac.ComputeHash();
+               // mac.Key
+                //mac.ComputeHash();
             }
             stream.Write(r.ToArray());
             packet_count_sent++;

@@ -9,24 +9,24 @@ namespace SSHClientSharp
     {
         public static UTF8Encoding text_encoder = new UTF8Encoding();
 
-        public static byte[] SubReverseArray(byte[] src, ulong start, ulong length)
+        public static byte[] SubReverseArray(byte[] src, long start, long length)
         {
             byte[] r = new byte[length];
-            for (ulong i = 0; i < length; i++) { r[i] = src[start + length - i - 1]; }
+            for (int i = 0; i < length; i++) { r[i] = src[start + length - i - 1]; }
             return r;
         }
-        public static UInt64 GetUInt64(byte[] src, ulong start)
+        public static UInt64 GetUInt64(byte[] src, long start)
         {
             byte[] t = SubReverseArray(src, start, 8);
             return BitConverter.ToUInt64(t);
         }
         //big edian handle:
-        public static UInt32 GetUInt32(byte[] src, ulong start)
+        public static UInt32 GetUInt32(byte[] src, long start)
         {
             byte[] t = SubReverseArray(src, start, 4);
             return BitConverter.ToUInt32(t);
         }
-        public static UInt16 GetUInt16(byte[] src, ulong start)
+        public static UInt16 GetUInt16(byte[] src, long start)
         {
             byte[] t = SubReverseArray(src, start, 2);
 
@@ -34,7 +34,7 @@ namespace SSHClientSharp
         }
         public static string[] GetNameList(byte[] src, ref UInt32 pos)
         {
-            UInt32 length = GetUInt32(src, pos);
+            UInt32 length = GetUInt32(src, (long)pos);
             pos += 4;
             string s = text_encoder.GetString(src, (int)pos, (int)length);
             pos += length;
@@ -72,15 +72,7 @@ namespace SSHClientSharp
             b.CopyTo(r, 4);
             return r;
         }
-        public static byte[] MPInt(BigInteger n)
-        {
-            byte[] a = n.ToByteArray(false, true);
-            UInt32 l = (UInt32)a.Length;
-            List<byte> r = new List<byte>();
-            r.AddRange(UInt32Bytes(l));
-            r.AddRange(a);
-            return r.ToArray();
-        }
+
         static Random random = new Random();
         public static void RandomPadding(ref byte[] a)
         {
@@ -97,15 +89,31 @@ namespace SSHClientSharp
         }
         public static string GetSSHString(byte[] r,ref int pos)
         {
-            UInt32 l = GetUInt32(r, (ulong)pos);
+            UInt32 l = GetUInt32(r, pos);
             string s=text_encoder.GetString(r, pos + 4, (int)l);
             pos+=4+(int)l;
             return s;
-
+        }
+        public static byte[] SSHStringBytes(string s)
+        {
+            byte[] b=text_encoder.GetBytes(s);
+            byte[] r=new byte[b.Length+4];
+            SetUInt32(ref r,(uint)b.Length,0);
+            b.CopyTo(r,4);
+            return r;
+        }
+        public static byte[] MPIntBytes(BigInteger n)
+        {
+            byte[] a = n.ToByteArray(false, true);
+            UInt32 l = (UInt32)a.Length;
+            List<byte> r = new List<byte>();
+            r.AddRange(UInt32Bytes(l));
+            r.AddRange(a);
+            return r.ToArray();
         }
         public static BigInteger GetMPInt(byte[] r,ref int pos)
         {
-            UInt32 l = GetUInt32(r, (ulong)pos);
+            UInt32 l = GetUInt32(r, pos);
             byte[] s = new byte[l];
             for (int i = 0; i < l; i++) s[i] = r[pos + 4 + i];
             pos+=4+(int)l;
