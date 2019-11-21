@@ -6,22 +6,29 @@ using System.Net.Sockets;
 using System.IO;
 namespace SSHClientSharp
 {
-    class SSH
+    public class SSH
     {
-        const string client_id = "SSH-2.0-AeroSSHSharp_0.0001";
-
-        TcpClient tcp;
+        public string client_id = "SSH-2.0-AeroSSHSharp_0.0001";
+        public string server_id = "";
         string host;
+        TcpClient tcp;
+
         int port;
-        string server_id = "";
-        bool isMacOn = false;
-        HMACSHA1 mac = new HMACSHA1();
+
+        bool isEncryptOn = false;
+        HMACSHA1 mac_alg_cs;
+        HMACSHA1 mac_alg_sc;
+        Aes128Ctr en_alg_cs;
+        Aes128Ctr en_alg_sc;
         NetworkStream stream;
         public SSH(string host, int port = 22)
         {
             this.host = host;
             this.port = port;
         }
+        KexDHInit dhi;
+        KexDHReply dhr;
+        public KexInit kexinit_s,kexinit_c;
         public void Connect()
         {
             tcp = new TcpClient(host, port);
@@ -51,15 +58,24 @@ namespace SSHClientSharp
                     switch ((SSH_MSG)p[0])
                     {
                         case SSH_MSG.KEXINIT:
-                            KexPacket a = new KexPacket(p);
-                            KexPacket b = new KexPacket();
-                            WritePacket(b);
+                            kexinit_s = new KexInit(p);
+                            kexinit_c = new KexInit();
+                            WritePacket(kexinit_c);
                             //应该检查一下是否有相符的
-                            KexDHInit dhi = new KexDHInit();
+                            dhi = new KexDHInit();
                             WritePacket(dhi);
                             break;
                         case SSH_MSG.KEXDH_REPLY:
-                            KexDHReply dhr = new KexDHReply(p);
+                            dhr = new KexDHReply(p);
+                            Keys kex=new Keys(dhi,dhr,this);
+                            //CTR模式密钥 https://tools.ietf.org/html/rfc4344#section-4
+                            mac_alg_cs=new HMACSHA1();
+                            mac_alg_sc=new HMACSHA1();
+                            mac_alg_cs.Key=kex.in_key_cs;
+                            mac_alg_sc.Key=kex.in_key_sc;
+                            en_alg_cs=new Aes128Ctr(kex.en_key_cs,kex.IV_cs);
+                            en_alg_sc=new Aes128Ctr(kex.en_key_sc,kex.IV_sc);
+                            isEncryptOn=true;
                             WritePacket(new NewKeys());
                             WritePacket(new ServiceReqest("ssh-userauth"));
                             break;
@@ -122,8 +138,8 @@ namespace SSHClientSharp
             byte[] payload = p.ToBytes();
             Log.log("[Info]Send packet:type " + payload[0] + " SSH_MSG_" + ((SSH_MSG)payload[0]).ToString());
             UInt32 packet_length = (UInt32)payload.Length;
-            uint padding_length = 8 - ((packet_length + 5) % 8);
-            if (padding_length < 4) padding_length += 8;
+            uint padding_length = 16 - ((packet_length + 5) % 16);
+            if (padding_length < 4) padding_length += 16;
             packet_length += padding_length + 1;
             List<byte> r = new List<byte>();
             r.AddRange(Util.UInt32Bytes(packet_length));
@@ -132,11 +148,14 @@ namespace SSHClientSharp
             byte[] padding = new byte[padding_length];
             Util.RandomPadding(ref padding);
             r.AddRange(padding);
-            //to-do mac;
-            if (isMacOn)
+            
+            if (isEncryptOn)
             {
-               // mac.Key
-                //mac.ComputeHash();
+                byte[] raw_packet=r.ToArray();
+                r.Clear();
+                r.AddRange(en_alg_cs.Encrypt(raw_packet));                
+                byte[] mac=mac_alg_cs.ComputeHash(raw_packet);
+                r.AddRange(mac);
             }
             stream.Write(r.ToArray());
             packet_count_sent++;

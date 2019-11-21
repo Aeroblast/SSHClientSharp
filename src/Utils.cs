@@ -48,6 +48,14 @@ namespace SSHClientSharp
                 target[pos + a] = c[3 - a];
             }
         }
+        public static void SetUInt64(ref byte[] target, UInt64 i, int pos)
+        {
+            byte[] c = BitConverter.GetBytes(i);
+            for (int a = 0; a < 8; a++)
+            {
+                target[pos + a] = c[7 - a];
+            }
+        }
         public static byte[] UInt32Bytes(UInt32 i)
         {
             byte[] a = BitConverter.GetBytes(i);
@@ -92,6 +100,15 @@ namespace SSHClientSharp
             UInt32 l = GetUInt32(r, pos);
             string s=text_encoder.GetString(r, pos + 4, (int)l);
             pos+=4+(int)l;
+            return s;
+        }
+        public static byte[] GetSSHRawString(byte[] r,ref int pos)
+        {
+            UInt32 l = GetUInt32(r, pos);
+            pos+=4;
+            byte[] s=new byte[l];
+            for(UInt32 i=0;i<l;i++)s[i]=r[pos+i];
+            pos+=(int)l;
             return s;
         }
         public static byte[] SSHStringBytes(string s)

@@ -5,7 +5,7 @@ namespace SSHClientSharp
 {
 
     //SSH_MSG.KEXINIT
-    public class KexPacket:Packet
+    public class KexInit:Packet
     {
         byte[] cookie=new byte[16];
         string[] kex_algorithms;//密钥交换算法
@@ -20,7 +20,7 @@ namespace SSHClientSharp
         string[] languages_server_to_client;
         byte first_kex_packet_follows;
         UInt32 reserve;
-        public KexPacket(byte[] data)
+        public KexInit(byte[] data)
         {
             UInt32 pos = 1;
             for(uint i=0;i<16;i++)cookie[i]=data[pos+i];
@@ -38,7 +38,7 @@ namespace SSHClientSharp
             first_kex_packet_follows = data[pos]; pos++;
             reserve=Util.GetUInt32(data,pos);
         }
-        public KexPacket()
+        public KexInit()
         {
             kex_algorithms=new string[]{"diffie-hellman-group14-sha1"};//备选diffie-hellman-group-exchange-sha256 RFC4419
             server_host_key_algorithms=new string[]{"ssh-rsa"};
