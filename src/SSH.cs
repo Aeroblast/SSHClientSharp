@@ -27,6 +27,7 @@ namespace SSHClientSharp
             this.port = port;
         }
         KexDHInit dhi;
+        public byte[] kexinit_s_payload;
         KexDHReply dhr;
         public KexInit kexinit_s,kexinit_c;
         public void Connect()
@@ -59,6 +60,7 @@ namespace SSHClientSharp
                     {
                         case SSH_MSG.KEXINIT:
                             kexinit_s = new KexInit(p);
+                            kexinit_s_payload=p;
                             kexinit_c = new KexInit();
                             WritePacket(kexinit_c);
                             //应该检查一下是否有相符的

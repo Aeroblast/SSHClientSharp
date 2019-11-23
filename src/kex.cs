@@ -35,7 +35,7 @@ namespace SSHClientSharp
     {
         //Kex Dh Reply
         public byte[] hostkey;
-        public BigInteger DH_server_f;
+        public byte[] DH_server_f;
         public byte[] H;
 
 
@@ -48,7 +48,7 @@ namespace SSHClientSharp
 
             int pos = 1;
             hostkey = Util.GetSSHRawString(payload, ref pos);
-            DH_server_f = Util.GetMPInt(payload, ref pos);
+            DH_server_f = Util.GetSSHRawString(payload, ref pos);
             H = Util.GetSSHRawString(payload, ref pos);
 
             if (pos != payload.Length) throw new SSHException();
@@ -86,8 +86,8 @@ namespace SSHClientSharp
             this.server = server;
             this.client = client;
             this.context = context;
-
-            _key = BigInteger.ModPow(client.e, server.DH_server_f, client.q);
+            BigInteger f=new BigInteger(server.DH_server_f,false,true);
+            _key = BigInteger.ModPow(client.e, f, client.q);
             K = Util.MPIntBytes(_key);
             TestExchangeHash();
             H = server.H;
@@ -169,12 +169,14 @@ namespace SSHClientSharp
             H_src.AddRange(Util.SSHStringBytes(context.client_id));
             H_src.AddRange(Util.SSHStringBytes(context.server_id));
             H_src.AddRange(context.kexinit_c.ToBytes());
-            H_src.AddRange(context.kexinit_s.ToBytes());
+            H_src.AddRange(context.kexinit_s_payload);
             H_src.AddRange(server.hostkey);
             H_src.AddRange(Util.MPIntBytes(client.e));
-            H_src.AddRange(Util.MPIntBytes(server.DH_server_f));
+            H_src.AddRange(server.DH_server_f);
             H_src.AddRange(K);
             byte[] hash_local=hash.ComputeHash(H_src.ToArray());
+            var x=rsa.VerifyHash(hash_local,a,HashAlgorithmName.SHA1,RSASignaturePadding.Pkcs1);
+            var y=rsa.VerifyData(H_src.ToArray(),hash,a);
             byte[] h = rsa.Encrypt(hash_local, false);//RSASSA-PKCS1-v1_5
         }
 
